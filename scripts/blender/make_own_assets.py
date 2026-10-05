@@ -7,7 +7,9 @@
   own_crate.glb      a static bevelled crate with 4096 px base-colour and roughness textures
 
 Both are exported the way a DCC tool exports by default: uncompressed geometry, PNG textures.
-Everything is seeded, so the files come out the same on every run.
+Everything is seeded, so every run gives the same textures, the same file sizes and equivalent
+geometry. The files are not byte-identical between runs: Blender does not write vertices and
+indices in a stable order.
 """
 
 import argparse
