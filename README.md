@@ -174,9 +174,9 @@ Then open http://localhost:8080 and sign in with the token from `docker-compose.
 Containers have no GPU, so the worker renders with Mesa's software OpenGL, and the worker image is
 `linux/amd64` because Blender only publishes x86-64 Linux builds. On an Apple Silicon Mac that
 means emulation on top of software rendering. It works, slowly: measured here, a convert job took
-1 to 3 s, an EEVEE turntable about 230 s, and a splat turntable 146 s. `TURNTABLE_ENGINE=workbench`
-cuts the Blender turntable to roughly half a minute with flat shading. For day-to-day work on a
-Mac, run the worker natively instead (4 to 5 s per turntable):
+1 to 3 s, an EEVEE turntable 140 s on its own (230 s with two rendering side by side), and a splat
+turntable 146 s. `TURNTABLE_ENGINE=workbench` renders a frame in about a second instead, with flat
+shading. For day-to-day work on a Mac, run the worker natively (4 to 5 s per turntable):
 
 **Local development**
 
