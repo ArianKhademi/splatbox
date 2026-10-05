@@ -19,8 +19,11 @@ export const MODEL_EXTENSIONS = ['.glb', '.gltf', '.fbx', '.obj'] as const
 export const SPLAT_EXTENSIONS = ['.ply', '.splat', '.ksplat'] as const
 export const VIDEO_EXTENSIONS = ['.mp4', '.webm', '.mov'] as const
 
+/** The roles a client uploads; the rest are produced by the worker. */
+export type UploadRole = Extract<FileRole, 'source' | 'video' | 'motion'>
+
 /** Which upload roles each asset kind needs. */
-export const REQUIRED_ROLES: Record<AssetKind, FileRole[]> = {
+export const REQUIRED_ROLES: Record<AssetKind, UploadRole[]> = {
   character: ['source'],
   clip: ['source'],
   splat: ['source'],

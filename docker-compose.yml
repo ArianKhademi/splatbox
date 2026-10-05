@@ -1,0 +1,77 @@
+# Everything Splatbox needs on one machine:
+#   docker compose up              the whole stack; open http://localhost:8080
+#   docker compose up -d redis minio   only the backing services, for running api/worker/web with npm
+# Host ports can be moved with REDIS_PORT, MINIO_PORT, MINIO_CONSOLE_PORT, API_HOST_PORT and WEB_PORT.
+name: splatbox
+
+x-app-env: &app-env
+  API_TOKEN: ${API_TOKEN:-dev-token-change-me-0000}
+  SESSION_SECRET: ${SESSION_SECRET:-dev-session-secret-change-me-0000}
+  DATABASE_PATH: /data/splatbox.sqlite
+  REDIS_URL: redis://redis:6379
+  S3_BUCKET: splatbox
+  S3_REGION: us-east-1
+  # The api and worker reach MinIO by service name; browsers are handed localhost URLs.
+  S3_ENDPOINT: http://minio:9000
+  S3_PUBLIC_ENDPOINT: http://localhost:${MINIO_PORT:-9000}
+  S3_FORCE_PATH_STYLE: "true"
+  S3_CREATE_BUCKET: "true"
+  AWS_ACCESS_KEY_ID: splatbox
+  AWS_SECRET_ACCESS_KEY: splatbox-secret
+
+services:
+  redis:
+    image: redis:7.4-alpine
+    ports: ["${REDIS_PORT:-6379}:6379"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  minio:
+    # Local stand-in for Amazon S3. MinIO no longer publishes images on Docker Hub; this is
+    # Chainguard's build of the same server (RELEASE.2026-09-22), pinned by digest.
+    image: cgr.dev/chainguard/minio@sha256:4cf4831a2bbcf13ddca09c1cbcc9faff716dd3c4247e0babc32864b8ee8e0034
+    command: ["server", "/data", "--console-address", ":9001"]
+    environment:
+      MINIO_ROOT_USER: splatbox
+      MINIO_ROOT_PASSWORD: splatbox-secret
+    ports: ["${MINIO_PORT:-9000}:9000", "${MINIO_CONSOLE_PORT:-9001}:9001"]
+    volumes: ["minio-data:/data"]
+
+  api:
+    build: { context: ., dockerfile: api/Dockerfile }
+    environment:
+      <<: *app-env
+      API_PORT: "4000"
+    ports: ["${API_HOST_PORT:-4000}:4000"]
+    volumes: ["app-data:/data"]
+    depends_on:
+      redis: { condition: service_healthy }
+      minio: { condition: service_started }
+
+  worker:
+    build: { context: ., dockerfile: worker/Dockerfile }
+    # Blender only ships official Linux builds for x86-64; on Apple Silicon this runs under emulation.
+    platform: linux/amd64
+    environment:
+      <<: *app-env
+      WORKER_CONCURRENCY: "2"
+      TURNTABLE_ENGINE: ${TURNTABLE_ENGINE:-eevee}
+      RENDER_PAGE_URL: http://web/render.html
+    # The api and the worker open the same SQLite file through this shared volume.
+    volumes: ["app-data:/data"]
+    depends_on:
+      redis: { condition: service_healthy }
+      minio: { condition: service_started }
+      api: { condition: service_started }
+
+  web:
+    build: { context: ., dockerfile: web/Dockerfile }
+    ports: ["${WEB_PORT:-8080}:80"]
+    depends_on: [api]
+
+volumes:
+  minio-data:
+  app-data:

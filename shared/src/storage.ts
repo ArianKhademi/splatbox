@@ -35,6 +35,8 @@ export const keys = {
   prefixes: (assetId: string) => [`uploads/${assetId}/`, `converted/${assetId}/`, `thumbs/${assetId}/`],
 }
 
+const HOUR_MS = 3600_000
+
 function isNotFound(err: unknown): boolean {
   const e = err as { name?: string; $metadata?: { httpStatusCode?: number } }
   return e?.name === 'NotFound' || e?.name === 'NoSuchKey' || e?.$metadata?.httpStatusCode === 404
@@ -70,8 +72,16 @@ export class Storage {
     return getSignedUrl(this.signer, new PutObjectCommand({ Bucket: this.bucket, Key: key, ContentType: contentType }), { expiresIn })
   }
 
-  presignGet(key: string, expiresIn = 3600): Promise<string> {
-    return getSignedUrl(this.signer, new GetObjectCommand({ Bucket: this.bucket, Key: key }), { expiresIn })
+  /**
+   * URL a browser can GET the object from, valid for at least an hour.
+   *
+   * The signature covers the signing time, so signing "now" would give a different URL on every
+   * call and the browser would re-download each thumbnail every time the grid polls. Signing with
+   * the clock truncated to the hour returns the same URL all hour, which the HTTP cache can hit.
+   */
+  presignGet(key: string): Promise<string> {
+    const signingDate = new Date(Math.floor(Date.now() / HOUR_MS) * HOUR_MS)
+    return getSignedUrl(this.signer, new GetObjectCommand({ Bucket: this.bucket, Key: key }), { expiresIn: 2 * 3600, signingDate })
   }
 
   /** Size and type of an object, or null if it does not exist. */
@@ -130,7 +140,12 @@ export class Storage {
       await this.client.send(new HeadBucketCommand({ Bucket: this.bucket }))
     } catch (err) {
       if (!isNotFound(err)) throw err
-      await this.client.send(new CreateBucketCommand({ Bucket: this.bucket }))
+      try {
+        await this.client.send(new CreateBucketCommand({ Bucket: this.bucket }))
+      } catch (createErr) {
+        // Another process created it between our check and our create; that is the outcome we wanted.
+        if ((createErr as { name?: string }).name !== 'BucketAlreadyOwnedByYou') throw createErr
+      }
     }
   }
 
