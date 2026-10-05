@@ -1,0 +1,11 @@
+**/node_modules
+.git
+.env
+data
+.bench
+docs
+samples/assets
+web/dist
+web/public/draco
+web/test-results
+web/playwright-report
