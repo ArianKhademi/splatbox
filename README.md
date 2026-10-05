@@ -168,9 +168,15 @@ docker compose up --build
 ```
 
 Then open http://localhost:8080 and sign in with the token from `docker-compose.yml`
-(`dev-token-change-me-0000`). The worker image is `linux/amd64`, because Blender only publishes
-x86-64 Linux builds; on Apple Silicon it runs under emulation, which is slow for rendering. For
-day-to-day work on a Mac, run the worker natively instead:
+(`dev-token-change-me-0000`). If a port is taken, move it with `WEB_PORT`, `API_HOST_PORT`,
+`MINIO_PORT` or `REDIS_PORT`.
+
+Containers have no GPU, so the worker renders with Mesa's software OpenGL, and the worker image is
+`linux/amd64` because Blender only publishes x86-64 Linux builds. On an Apple Silicon Mac that
+means emulation on top of software rendering. It works, slowly: measured here, a convert job took
+1 to 3 s, an EEVEE turntable about 230 s, and a splat turntable 146 s. `TURNTABLE_ENGINE=workbench`
+cuts the Blender turntable to roughly half a minute with flat shading. For day-to-day work on a
+Mac, run the worker natively instead (4 to 5 s per turntable):
 
 **Local development**
 
@@ -241,6 +247,7 @@ Measured on an Apple M4 (10 cores, 24 GB), macOS 26.6, Blender 4.5.14 LTS, Chrom
 | Renderer memory across 50 asset switches | geometries 2, textures 3 after every cycle | `web/e2e/memory.spec.ts` |
 | Convert job | about 1 s per asset | `scripts/run_pipeline.ts` |
 | Turntable job | about 4 to 5 s per asset in Blender; 2.5 s for a 150k-splat scene in Chromium | `scripts/run_pipeline.ts` |
+| Frame rate with the CPU throttled 4x | 60.2 fps (the GPU is not throttled) | same perf test |
 
 The second sync row is the honest caveat to the first: `currentTime` is a continuous clock that
 runs ahead of the frame currently displayed, so the pose leads the picture by up to about one
@@ -267,9 +274,18 @@ video frame.
 - **The sample splat scene is synthesized** from a mesh by `scripts/make_splat.ts`, not captured.
   It is a valid splat file in both layouts, without view-dependent colour.
 - **Single host.** The api and the worker share one SQLite file. Auth is one shared token.
-- **Node 20** is what the spec pins and what everything here is tested on; it is past its
-  end-of-life date, and the AWS SDK will require Node 22 from January 2027.
+- **Node 20** is what the spec pins and what everything here is tested on. It is past its
+  end-of-life date: the AWS SDK will require Node 22 from January 2027, and `better-sqlite3` is
+  pinned to 12.8.0 because later releases no longer ship Node 20 binaries.
 - **Uploads are single-part** presigned PUTs, so one object is limited to 5 GB.
+
+## Not built yet
+
+- A hosted demo.
+- Importing a Rigforge output directly from its asset URL.
+- An export menu (FBX and USDZ through Blender, share links).
+- An original-versus-converted comparison view.
+- KTX2/Basis textures as a second compression profile.
 
 ## How this was built
 
