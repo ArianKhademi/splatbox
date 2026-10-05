@@ -24,10 +24,10 @@
     "dev:web": "npm run dev -w web"
   },
   "devDependencies": {
-    "@eslint/js": "^9.39.5",
+    "@eslint/js": "^10.0.0",
     "@types/node": "^20.19.0",
-    "eslint": "^9.39.5",
-    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint": "^10.12.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
     "globals": "^16.0.0",
     "tsx": "^4.23.15",
     "typescript": "~5.9.3",

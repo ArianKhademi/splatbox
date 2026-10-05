@@ -1,0 +1,23 @@
+{
+  "name": "@splatbox/worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "tsx src/index.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@splatbox/shared": "*",
+    "bullmq": "^5.81.5",
+    "ioredis": "^5.11.1",
+    "playwright": "^1.63.0",
+    "sharp": "^0.35.5",
+    "tsx": "^4.23.15"
+  },
+  "devDependencies": {
+    "vitest": "^4.1.11"
+  }
+}
