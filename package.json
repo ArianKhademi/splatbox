@@ -21,7 +21,8 @@
     "samples": "bash scripts/make_samples.sh",
     "dev:api": "npm run dev -w api",
     "dev:worker": "npm run dev -w worker",
-    "dev:web": "npm run dev -w web"
+    "dev:web": "npm run dev -w web",
+    "dev": "npm run dev -w web"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.0",

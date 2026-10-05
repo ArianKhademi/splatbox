@@ -1,17 +1,12 @@
-import { test } from '@playwright/test'
+import { test, type Page } from '@playwright/test'
 import { expect, openDemo } from './helpers'
 
 /**
  * Frame-rate measurement on the 63k-triangle skinned mannequin. It only means something on a
  * machine with a GPU, so it is opt-in: PERF=1 npx playwright test perf
  */
-test('plays a 50k+ triangle skinned character at 60 fps', async ({ page }) => {
-  test.skip(process.env.PERF !== '1', 'set PERF=1 to run the frame-rate measurement')
-  await openDemo(page, 'mannequin')
-  await expect(page.getByTestId('model-stats')).toContainText('63,488 tris')
-  await page.getByRole('button', { name: 'Play' }).click()
-
-  const result = await page.evaluate(
+function measure(page: Page) {
+  return page.evaluate(
     () =>
       new Promise<{ fps: number; p95Ms: number; frames: number; renderer: string }>((resolve) => {
         const gl = document.createElement('canvas').getContext('webgl2')!
@@ -35,6 +30,22 @@ test('plays a 50k+ triangle skinned character at 60 fps', async ({ page }) => {
         requestAnimationFrame(tick)
       }),
   )
+}
+
+test('plays a 50k+ triangle skinned character at 60 fps', async ({ page }) => {
+  test.skip(process.env.PERF !== '1', 'set PERF=1 to run the frame-rate measurement')
+  await openDemo(page, 'mannequin')
+  await expect(page.getByTestId('model-stats')).toContainText('63,488 tris')
+  await page.getByRole('button', { name: 'Play' }).click()
+
+  const result = await measure(page)
   console.log(`perf: ${JSON.stringify(result)}`)
   expect(result.fps).toBeGreaterThanOrEqual(58)
+
+  // The same again with the CPU slowed four times, as a stand-in for a slower laptop. This only
+  // throttles JavaScript (the mixer update and skinning set-up); the GPU is not slowed.
+  const devtools = await page.context().newCDPSession(page)
+  await devtools.send('Emulation.setCPUThrottlingRate', { rate: 4 })
+  const throttled = await measure(page)
+  console.log(`perf with 4x CPU throttle: ${JSON.stringify(throttled)}`)
 })
