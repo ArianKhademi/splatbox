@@ -1,0 +1,34 @@
+{
+  "khronos": {
+    "repository": "https://github.com/KhronosGroup/glTF-Sample-Assets",
+    "commit": "edc7c9e67c639d230715049ee31f9a96a6babbbe"
+  },
+  "downloads": [
+    { "file": "Fox.glb", "model": "Fox", "sha256": "d97044e701822bac5a62696459b27d7b375aada5de8574ed4362edbba94771f7" },
+    { "file": "RiggedFigure.glb", "model": "RiggedFigure", "sha256": "d6be85417d3e256861ee733eea6916093a7af7c79c16366181fd8abcaeb38cf5" },
+    { "file": "CesiumMilkTruck.glb", "model": "CesiumMilkTruck", "sha256": "09371b34608116de5842d23abe260bf11acf3e1554daf334a647eb566eee5c49" },
+    { "file": "Avocado.glb", "model": "Avocado", "sha256": "ccc9c3ce56423720b09399c2351537207cd5a65f859f9e6e2f30922762f3abd4" },
+    { "file": "BoomBox.glb", "model": "BoomBox", "sha256": "f8b918445ebdd006768232205a62f5182d2208ca57f84c6ccc084943c0bc8f15" },
+    { "file": "WaterBottle.glb", "model": "WaterBottle", "sha256": "b337e526fd6a162013c2984aeec163f5fbb4f717252724dfc3f3458bd51df94b" },
+    { "file": "Lantern.glb", "model": "Lantern", "sha256": "a79458c4b02d695187a952f23a63b8bf278e7bc3d316a3c2a314f2d6974181f1" },
+    { "file": "ToyCar.glb", "model": "ToyCar", "sha256": "01a60862de55cd4b9f3acfab0b0def86451800f9c42467fcd61052c16cb9838c" },
+    { "file": "Corset.glb", "model": "Corset", "sha256": "9582c0dc0dee813be77f60e6ddf7213987c7e11497bf3cc66fd7b18957ae0d26" },
+    { "file": "CesiumMan.glb", "model": "CesiumMan", "sha256": "b7001eaeea8254bd44773bcd247e78696d94169388fbb2a1800fc69434e777d9" },
+    { "file": "BarramundiFish.glb", "model": "BarramundiFish", "sha256": "ecc3bafb6b00f2c8b810863c388e3768a7b7ea0d0335e8cb8c574c266e571f4a" }
+  ],
+  "benchmark": [
+    { "file": "Fox.glb", "group": "third-party", "content": "rigged character, 3 clips", "license": "CC0-1.0 (model), CC-BY-4.0 (rig, animation, glTF conversion)", "credit": "PixelMannen; tomkranis; @AsoboStudio and @scurest" },
+    { "file": "RiggedFigure.glb", "group": "third-party", "content": "rigged character, 1 clip, untextured", "license": "CC-BY-4.0", "credit": "Cesium" },
+    { "file": "CesiumMan.fbx", "group": "third-party", "content": "rigged character, 1 clip (FBX, texture embedded)", "license": "CC-BY-4.0", "credit": "Cesium; exported to FBX by scripts/blender/derive_samples.py" },
+    { "file": "CesiumMilkTruck.glb", "group": "third-party", "content": "node-animated vehicle", "license": "CC-BY-4.0", "credit": "Cesium" },
+    { "file": "Avocado.glb", "group": "third-party", "content": "static PBR prop", "license": "CC0-1.0", "credit": "Microsoft" },
+    { "file": "BoomBox.glb", "group": "third-party", "content": "static PBR prop", "license": "CC0-1.0", "credit": "Microsoft" },
+    { "file": "WaterBottle.glb", "group": "third-party", "content": "static PBR prop", "license": "CC0-1.0", "credit": "Microsoft" },
+    { "file": "Lantern.glb", "group": "third-party", "content": "static PBR prop", "license": "CC0-1.0", "credit": "sbtron (Microsoft)" },
+    { "file": "ToyCar.glb", "group": "third-party", "content": "static PBR prop, 109k triangles", "license": "CC0-1.0", "credit": "Guido Odendahl; Eric Chadwick" },
+    { "file": "Corset.glb", "group": "third-party", "content": "static PBR prop", "license": "CC0-1.0", "credit": "Microsoft; UX3D" },
+    { "file": "BarramundiFish.obj", "group": "third-party", "content": "static mesh, geometry only (OBJ)", "license": "CC0-1.0", "credit": "Microsoft; exported to OBJ by scripts/blender/derive_samples.py" },
+    { "file": "own_mannequin.glb", "group": "in-house", "content": "rigged character, 63k triangles, 1 clip", "license": "authored for this repo", "credit": "scripts/blender/make_own_assets.py" },
+    { "file": "own_crate.glb", "group": "in-house", "content": "static prop, two 4096 px textures", "license": "authored for this repo", "credit": "scripts/blender/make_own_assets.py" }
+  ]
+}
