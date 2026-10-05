@@ -29,8 +29,9 @@ COPY api/package.json api/
 COPY worker/package.json worker/
 COPY web/package.json web/
 RUN npm ci --workspace worker --workspace shared --omit=dev \
- # Chromium, and the system libraries it needs, for rendering splat turntables.
- && npx playwright install --with-deps chromium \
+ # Chromium, and the system libraries it needs, for rendering splat turntables. The CLI is called
+ # by path: the `playwright` bin link belongs to @playwright/test, a dev dependency omitted here.
+ && node node_modules/playwright/cli.js install --with-deps chromium \
  && rm -rf /var/lib/apt/lists/*
 
 COPY tsconfig.base.json ./
