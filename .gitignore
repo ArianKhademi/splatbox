@@ -1,0 +1,24 @@
+node_modules/
+dist/
+.env
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+data/
+.DS_Store
+coverage/
+
+# sample assets are fetched and derived by scripts/make_samples.sh
+samples/assets/
+samples/.cache/
+
+# benchmark scratch output (converted GLBs)
+.bench/
+
+# copied from three at install time
+web/public/draco/
+
+# playwright
+web/test-results/
+web/playwright-report/
+web/e2e/**/*-actual.png

@@ -1,0 +1,36 @@
+{
+  "name": "splatbox",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "3D asset box: Three.js previewer, headless-Blender conversion workers, turntable thumbnails on S3",
+  "engines": {
+    "node": ">=20.19"
+  },
+  "workspaces": [
+    "shared",
+    "api",
+    "worker",
+    "web"
+  ],
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "npm run typecheck --workspaces --if-present && tsc -p scripts",
+    "test": "npm test --workspaces --if-present",
+    "bench": "tsx scripts/bench_convert.ts",
+    "samples": "bash scripts/make_samples.sh",
+    "dev:api": "npm run dev -w api",
+    "dev:worker": "npm run dev -w worker",
+    "dev:web": "npm run dev -w web"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.5",
+    "@types/node": "^20.19.0",
+    "eslint": "^9.39.5",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "globals": "^16.0.0",
+    "tsx": "^4.23.15",
+    "typescript": "~5.9.3",
+    "typescript-eslint": "^8.71.0"
+  }
+}
