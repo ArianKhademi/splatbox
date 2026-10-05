@@ -6,9 +6,9 @@
 What it does, in order:
   1. imports the file into an empty scene,
   2. removes cameras, lights and empties that carry nothing,
-  3. downscales textures whose longer side exceeds --max-texture,
-  4. exports a GLB with Draco mesh compression and re-encoded textures,
-     keeping skins and animations.
+  3. downscales textures whose longer side exceeds --max-texture and re-encodes
+     textures as WebP (or JPEG) wherever that is possible and smaller,
+  4. exports a GLB with Draco mesh compression, keeping skins and animations.
 
 The script reports through two stdout lines the TypeScript worker looks for:
     SPLATBOX_RESULT {json}   on success (always the last line)
@@ -19,10 +19,12 @@ import argparse
 import json
 import os
 import sys
+import tempfile
 import time
 import traceback
 
 import bpy
+import numpy as np
 
 
 
@@ -39,8 +41,8 @@ IMPORTERS = {
     ".gltf": import_gltf,
 }
 
-# Blender's image format names for --texture-format.
-TEXTURE_FORMATS = {"webp": "WEBP", "jpeg": "JPEG", "auto": "AUTO"}
+# --texture-format value -> (Blender image format, file extension). "auto" keeps source formats.
+TEXTURE_FORMATS = {"webp": ("WEBP", "webp"), "jpeg": ("JPEG", "jpg"), "auto": (None, None)}
 
 
 def parse_args(argv):
@@ -61,7 +63,7 @@ def parse_args(argv):
         "--texture-format",
         choices=sorted(TEXTURE_FORMATS),
         default="webp",
-        help="webp: every texture, alpha included. jpeg: opaque textures only, ones with alpha stay PNG. auto: keep formats",
+        help="webp: alpha is kept. jpeg: only textures without alpha, the rest stay PNG. auto: keep source formats",
     )
     parser.add_argument("--texture-quality", type=int, default=75, help="lossy quality, 0-100")
     parser.add_argument("--fps", type=int, default=30, help="scene frame rate; also the sampling rate with --bake-animations")
@@ -150,21 +152,89 @@ def strip_scene():
     return removed
 
 
-def resize_textures(max_size):
-    """Downscale textures whose longer side exceeds max_size, keeping the aspect ratio."""
-    resized = []
-    if max_size <= 0:
-        return resized
-    for img in texture_images():
-        width, height = img.size
-        longest = max(width, height)
-        if longest <= max_size:
-            continue
-        scale = max_size / longest
-        new_size = (max(1, round(width * scale)), max(1, round(height * scale)))
-        img.scale(*new_size)
-        resized.append({"name": img.name, "from": [width, height], "to": list(new_size)})
-    return resized
+def stored_bytes(image):
+    """Size of the image as it is encoded in the source file, or None if that cannot be told."""
+    if image.packed_file is not None:
+        return image.packed_file.size
+    path = bpy.path.abspath(image.filepath_raw)
+    return os.path.getsize(path) if os.path.isfile(path) else None
+
+
+def has_alpha(image):
+    """True if any pixel is less than fully opaque."""
+    if image.channels < 4:
+        return False
+    pixels = np.empty(image.size[0] * image.size[1] * image.channels, dtype=np.float32)
+    image.pixels.foreach_get(pixels)
+    return bool((pixels[3::4] < 0.999).any())
+
+
+def encode(image, size, file_format, quality, path):
+    """Write a copy of the image, scaled to size, in file_format. False if Blender cannot do that."""
+    copy = image.copy()
+    try:
+        copy.scale(*size)  # also makes Blender load the pixels from the packed bytes
+        copy.filepath_raw = path
+        copy.file_format = file_format
+        if file_format == "PNG":
+            copy.save()
+        else:
+            copy.save(quality=quality)
+        return os.path.isfile(path) and os.path.getsize(path) > 0
+    except RuntimeError:
+        # Blender refuses some combinations, for example single-channel images as WebP.
+        return False
+    finally:
+        bpy.data.images.remove(copy)
+
+
+def replace_image(image, path):
+    """Point every user of image at the file in path instead."""
+    replacement = bpy.data.images.load(path)
+    replacement.colorspace_settings.name = image.colorspace_settings.name
+    replacement.alpha_mode = image.alpha_mode
+    replacement.pack()  # hold the encoded bytes in memory; the file on disk is temporary
+    name = image.name
+    image.user_remap(replacement)
+    bpy.data.images.remove(image)
+    replacement.name = name
+
+
+def process_textures(max_size, texture_format, quality, workdir):
+    """Resize and re-encode textures one at a time; returns what happened to each.
+
+    A texture is only replaced when the result is actually better: it had to shrink to fit
+    max_size, or the re-encoded file is smaller than the original. Everything else is left exactly
+    as it was in the source, and the exporter copies those bytes through unchanged.
+    """
+    lossy_format, extension = TEXTURE_FORMATS[texture_format]
+    report = []
+    for index, image in enumerate(texture_images()):
+        width, height = image.size
+        scale = min(1.0, max_size / max(width, height)) if max_size > 0 else 1.0
+        target = (max(1, round(width * scale)), max(1, round(height * scale)))
+        resized = target != (width, height)
+        before = stored_bytes(image)
+        entry = {"name": image.name, "size": [width, height], "bytes_before": before, "action": "kept"}
+
+        candidates = []
+        if lossy_format and not (lossy_format == "JPEG" and has_alpha(image)):
+            candidates.append((lossy_format, extension))
+        if resized:
+            candidates.append(("PNG", "png"))  # must shrink even if the lossy encode is not possible
+
+        for file_format, ext in candidates:
+            path = os.path.join(workdir, f"texture_{index}.{ext}")
+            if not encode(image, target, file_format, quality, path):
+                continue
+            after = os.path.getsize(path)
+            if not resized and before is not None and after >= before:
+                continue  # e.g. a small flat-colour PNG that lossy encoding only makes bigger
+            replace_image(image, path)
+            entry.update(action="resized" if resized else "re-encoded", format=file_format, to=list(target), bytes_after=after)
+            break
+        report.append(entry)
+    return report
 
 
 def export_glb(args):
@@ -180,10 +250,9 @@ def export_glb(args):
         export_draco_texcoord_quantization=args.quant_texcoord,
         export_draco_color_quantization=args.quant_color,
         export_draco_generic_quantization=args.quant_generic,
-        # textures
-        export_image_format=TEXTURE_FORMATS[args.texture_format],
-        export_image_quality=args.texture_quality,
-        export_jpeg_quality=args.texture_quality,
+        # Textures were already resized and re-encoded one by one above; AUTO makes the exporter
+        # embed each image's bytes as they are instead of re-encoding everything to one format.
+        export_image_format="AUTO",
         # rig and motion
         export_skins=True,
         export_animations=True,
@@ -211,7 +280,8 @@ def main():
     import_asset(args.src)
     before = scene_stats()
     removed = strip_scene()
-    resized = resize_textures(args.max_texture)
+    with tempfile.TemporaryDirectory(prefix="splatbox-textures-") as workdir:
+        textures = process_textures(args.max_texture, args.texture_format, args.texture_quality, workdir)
     export_glb(args)
 
     result = {
@@ -221,7 +291,8 @@ def main():
         "bytes_after": os.path.getsize(args.dst),
         "before": before,
         "removed": removed,
-        "resized_textures": resized,
+        "textures": textures,
+        "resized_textures": [t for t in textures if t["action"] == "resized"],
         "settings": {
             "draco": args.draco,
             "draco_level": args.draco_level,

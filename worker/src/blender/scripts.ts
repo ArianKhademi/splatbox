@@ -26,7 +26,9 @@ export interface ConvertReport {
   bytes_after: number
   before: { triangles: number; meshes: number; textures: number; armatures: number; animations: number }
   removed: { cameras: number; lights: number; empties: number }
-  resized_textures: { name: string; from: [number, number]; to: [number, number] }[]
+  /** One entry per texture: left as it was, re-encoded, or resized (and re-encoded). */
+  textures: { name: string; size: [number, number]; bytes_before: number | null; action: 'kept' | 're-encoded' | 'resized'; format?: string; to?: [number, number]; bytes_after?: number }[]
+  resized_textures: { name: string; size: [number, number]; to?: [number, number] }[]
   settings: Record<string, unknown>
   blender: string
   seconds: number
