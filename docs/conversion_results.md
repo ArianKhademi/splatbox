@@ -6,19 +6,19 @@
 
 | Asset | Content | Before (KB) | After (KB) | Reduction | Triangles | Textures | Convert (s) |
 | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| `Fox.glb` | rigged character, 3 clips | 159.0 | 108.3 | 31.9% | 576 | 1 | 0.57 |
-| `RiggedFigure.glb` | rigged character, 1 clip, untextured | 48.9 | 25.9 | 47.1% | 256 | 0 | 0.50 |
-| `CesiumMan.fbx` | rigged character, 1 clip (FBX, texture embedded) | 544.3 | 137.9 | 74.7% | 4,672 | 1 | 0.58 |
-| `CesiumMilkTruck.glb` | node-animated vehicle | 361.3 | 79.8 | 77.9% | 3,624 | 1 | 0.62 |
-| `Avocado.glb` | static PBR prop | 7,920.0 | 120.0 | 98.5% | 682 | 3 | 1.05 |
-| `BoomBox.glb` | static PBR prop | 10,365.4 | 394.7 | 96.2% | 6,036 | 4 | 1.32 |
-| `WaterBottle.glb` | static PBR prop | 8,756.5 | 182.3 | 97.9% | 4,510 | 4 | 1.36 |
-| `Lantern.glb` | static PBR prop | 9,340.1 | 738.8 | 92.1% | 5,394 | 4 | 1.57 |
-| `ToyCar.glb` | static PBR prop, 109k triangles | 5,295.3 | 839.6 | 84.1% | 108,936 | 8 | 1.11 |
-| `Corset.glb` | static PBR prop | 13,175.2 | 661.7 | 95.0% | 18,324 | 3 | 1.39 |
-| `BarramundiFish.obj` | static mesh, geometry only (OBJ) | 315.3 | 17.5 | 94.5% | 3,864 | 0 | 0.48 |
-| `own_mannequin.glb` | rigged character, 63k triangles, 1 clip | 3,748.7 | 179.9 | 95.2% | 63,488 | 1 | 0.85 |
-| `own_crate.glb` | static prop, two 4096 px textures | 16,876.5 | 241.6 | 98.6% | 37,632 | 2 (2 resized) | 1.50 |
+| `Fox.glb` | rigged character, 3 clips | 159.0 | 108.3 | 31.9% | 576 | 1 | 0.61 |
+| `RiggedFigure.glb` | rigged character, 1 clip, untextured | 48.9 | 25.9 | 47.1% | 256 | 0 | 0.52 |
+| `CesiumMan.fbx` | rigged character, 1 clip (FBX, texture embedded) | 544.3 | 137.9 | 74.7% | 4,672 | 1 | 0.62 |
+| `CesiumMilkTruck.glb` | node-animated vehicle | 361.3 | 79.8 | 77.9% | 3,624 | 1 | 0.66 |
+| `Avocado.glb` | static PBR prop | 7,920.0 | 120.0 | 98.5% | 682 | 3 | 1.12 |
+| `BoomBox.glb` | static PBR prop | 10,365.4 | 394.7 | 96.2% | 6,036 | 4 | 1.35 |
+| `WaterBottle.glb` | static PBR prop | 8,756.5 | 182.3 | 97.9% | 4,510 | 4 | 1.32 |
+| `Lantern.glb` | static PBR prop | 9,340.1 | 738.8 | 92.1% | 5,394 | 4 | 1.49 |
+| `ToyCar.glb` | static PBR prop, 109k triangles | 5,295.3 | 839.6 | 84.1% | 108,936 | 8 | 0.97 |
+| `Corset.glb` | static PBR prop | 13,175.2 | 661.7 | 95.0% | 18,324 | 3 | 1.37 |
+| `BarramundiFish.obj` | static mesh, geometry only (OBJ) | 315.3 | 17.5 | 94.5% | 3,864 | 0 | 0.51 |
+| `own_mannequin.glb` | rigged character, 63k triangles, 1 clip | 3,748.7 | 179.5 | 95.2% | 63,488 | 1 | 0.89 |
+| `own_crate.glb` | static prop, two 4096 px textures | 16,876.5 | 241.6 | 98.6% | 37,632 | 2 (2 resized) | 1.60 |
 
 Smallest reduction 31.9%, largest 98.6%. Triangle, texture, skin and animation counts are checked to be identical before and after for every asset.
 
