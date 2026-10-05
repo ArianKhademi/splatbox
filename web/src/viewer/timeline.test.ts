@@ -84,6 +84,12 @@ describe('frameAt', () => {
     expect(frameAt(0, 30)).toBe(0)
     expect(frameAt(2 / 30, 30)).toBe(2)
     expect(frameAt(29 / 30, 30)).toBe(29)
-    expect(frameAt(0.999 / 30, 30)).toBe(0)
+    expect(frameAt(0.99 / 30, 30)).toBe(0)
+  })
+
+  it('does not fall back a frame when a media element truncates the time to microseconds', () => {
+    // 37/30 = 1.2333..., which a <video> reports as 1.233333.
+    expect(frameAt(1.233333, 30)).toBe(37)
+    expect(frameAt(1.966666, 30)).toBe(59)
   })
 })

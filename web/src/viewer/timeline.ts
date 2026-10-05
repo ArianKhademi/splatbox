@@ -97,7 +97,11 @@ export function reduceTimeline(state: TimelineState, event: TimelineEvent): Time
   }
 }
 
-/** Frame index shown in the readout. The epsilon keeps 2/30 s from flooring to frame 1. */
+/**
+ * Frame index shown in the readouts. A time that should sit exactly on a frame boundary rarely
+ * does: 2/30 is not representable in binary, and a video element reports its time truncated to
+ * the microsecond (1.233333 for frame 37 at 30 fps). A thousandth of a frame of slack absorbs both.
+ */
 export function frameAt(time: number, fps: number): number {
-  return Math.floor(time * fps + 1e-6)
+  return Math.floor(time * fps + 1e-3)
 }
