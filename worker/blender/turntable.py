@@ -64,32 +64,43 @@ def load(path):
 
 
 def bone_mesh(scene):
-    """Build an octahedral stick for every bone, in world space, so a mesh-less rig can be rendered."""
-    vertices, faces = [], []
+    """Build a stick figure so a mesh-less rig can be rendered: one octahedral stick from every
+    joint to its parent joint, in world space. (Bone tails are not used: glTF has no bone lengths,
+    so the importer invents them.)"""
+    joints = []
     for rig in [obj for obj in scene.objects if obj.type == "ARMATURE"]:
         for bone in rig.pose.bones:
-            head = rig.matrix_world @ bone.head
-            tail = rig.matrix_world @ bone.tail
-            length = (tail - head).length
-            if length < 1e-6:
-                continue
-            basis = (rig.matrix_world @ bone.matrix).to_3x3()
-            side, front = basis.col[0].normalized(), basis.col[2].normalized()
-            waist = head.lerp(tail, 0.15)
-            width = length * 0.12
-            base = len(vertices)
-            vertices += [head, waist + side * width, waist + front * width, waist - side * width, waist - front * width, tail]
-            for i in range(4):
-                a, b = base + 1 + i, base + 1 + (i + 1) % 4
-                faces += [(base, b, a), (base + 5, a, b)]
-    if not vertices:
+            if bone.parent is not None:
+                joints.append((rig.matrix_world @ bone.parent.head, rig.matrix_world @ bone.head))
+    if not joints:
         return None
+
+    points = [p for pair in joints for p in pair]
+    extent = max((max(p[i] for p in points) - min(p[i] for p in points)) for i in range(3))
+    vertices, faces = [], []
+    for start, end in joints:
+        axis = end - start
+        length = axis.length
+        if length < extent * 1e-4:
+            continue
+        # Two directions perpendicular to the stick, to give it a square waist.
+        helper = Vector((1, 0, 0)) if abs(axis.normalized().z) > 0.9 else Vector((0, 0, 1))
+        side = axis.cross(helper).normalized()
+        front = axis.cross(side).normalized()
+        waist = start.lerp(end, 0.2)
+        width = min(max(length * 0.12, extent * 0.006), extent * 0.025)
+        base = len(vertices)
+        vertices += [start, waist + side * width, waist + front * width, waist - side * width, waist - front * width, end]
+        for i in range(4):
+            a, b = base + 1 + i, base + 1 + (i + 1) % 4
+            faces += [(base, b, a), (base + 5, a, b)]
+
     mesh = bpy.data.meshes.new("Bones")
     mesh.from_pydata([tuple(v) for v in vertices], [], faces)
     material = bpy.data.materials.new("Bones")
     material.use_nodes = True
     bsdf = material.node_tree.nodes["Principled BSDF"]
-    bsdf.inputs["Base Color"].default_value = (0.35, 0.65, 1.0, 1.0)
+    bsdf.inputs["Base Color"].default_value = (0.12, 0.38, 0.9, 1.0)
     bsdf.inputs["Roughness"].default_value = 0.6
     mesh.materials.append(material)
     obj = bpy.data.objects.new("Bones", mesh)

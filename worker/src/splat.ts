@@ -45,7 +45,9 @@ export function createSplatRenderer(pageUrl: string): SplatRenderer {
   return {
     async render(request) {
       browser ??= chromium.launch({
-        // Servers have no GPU: allow WebGL on Chromium's software rasterizer (SwiftShader).
+        // The full Chromium build (not the stripped headless shell) renders on the GPU when the
+        // host has one. Servers usually do not, so also allow WebGL on the software rasterizer.
+        channel: 'chromium',
         args: ['--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'],
       })
       const context = await (await browser).newContext({
