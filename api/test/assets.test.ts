@@ -110,10 +110,11 @@ describe('GET /api/assets', () => {
     let cursor: string | null = null
     let pages = 0
     do {
-      const res = await t.request.get('/api/assets').query({ limit: 2, ...(cursor ? { cursor } : {}) }).set(t.auth).expect(200)
-      expect(res.body.items.length).toBeLessThanOrEqual(2)
-      seen.push(...res.body.items.map((a: { id: string }) => a.id))
-      cursor = res.body.nextCursor
+      const query: Record<string, string | number> = cursor ? { limit: 2, cursor } : { limit: 2 }
+      const page: { items: { id: string }[]; nextCursor: string | null } = (await t.request.get('/api/assets').query(query).set(t.auth).expect(200)).body
+      expect(page.items.length).toBeLessThanOrEqual(2)
+      seen.push(...page.items.map((a) => a.id))
+      cursor = page.nextCursor
       pages++
     } while (cursor)
     const total = t.db.listAssets({ limit: 100 }).items.length
