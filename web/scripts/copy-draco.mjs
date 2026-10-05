@@ -6,7 +6,8 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const require = createRequire(import.meta.url)
-const threeRoot = dirname(require.resolve('three/package.json'))
+// three does not export its package.json, so locate the package root from its main entry (build/three.cjs).
+const threeRoot = join(dirname(require.resolve('three')), '..')
 const from = join(threeRoot, 'examples/jsm/libs/draco/gltf')
 const to = join(dirname(fileURLToPath(import.meta.url)), '../public/draco')
 
