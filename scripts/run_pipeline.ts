@@ -112,13 +112,13 @@ async function main(): Promise<void> {
   }
 
   // Poll until every asset has settled.
-  let assets: Asset[] = []
-  for (;;) {
-    assets = await Promise.all(ids.map((id) => call<{ asset: Asset }>(`/api/assets/${id}`).then((r) => r.asset)))
-    const pending = assets.filter((a) => a.status !== 'ready' && a.status !== 'failed')
-    if (pending.length === 0) break
-    if (Date.now() - started > 15 * 60_000) throw new Error(`timed out waiting for: ${pending.map((a) => a.name).join(', ')}`)
+  const fetchAll = () => Promise.all(ids.map((id) => call<{ asset: Asset }>(`/api/assets/${id}`).then((r) => r.asset)))
+  const isPending = (a: Asset) => a.status !== 'ready' && a.status !== 'failed'
+  let assets = await fetchAll()
+  while (assets.some(isPending)) {
+    if (Date.now() - started > 15 * 60_000) throw new Error(`timed out waiting for: ${assets.filter(isPending).map((a) => a.name).join(', ')}`)
     await sleep(1000)
+    assets = await fetchAll()
   }
   const wall = (Date.now() - started) / 1000
 
