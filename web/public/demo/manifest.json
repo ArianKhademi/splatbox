@@ -1,0 +1,7 @@
+[
+  { "id": "fox", "name": "Fox", "kind": "character", "modelUrl": "/demo/fox.glb" },
+  { "id": "mannequin", "name": "Mannequin", "kind": "character", "modelUrl": "/demo/mannequin.glb" },
+  { "id": "fox-motion", "name": "Fox motion", "kind": "clip", "modelUrl": "/demo/fox-motion.glb" },
+  { "id": "avocado-splat", "name": "Avocado", "kind": "splat", "splatUrl": "/demo/avocado.splat", "splatFormat": "splat" },
+  { "id": "walk-pair", "name": "Walk", "kind": "pair", "videoUrl": "/demo/pair-video.mp4", "modelUrl": "/demo/pair-motion.glb" }
+]
