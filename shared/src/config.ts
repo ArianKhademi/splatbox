@@ -1,5 +1,10 @@
 import { existsSync } from 'node:fs'
+import { isAbsolute, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { z } from 'zod'
+
+/** The repository root (this file lives in shared/src). */
+export const REPO_ROOT = fileURLToPath(new URL('../..', import.meta.url))
 
 const bool = z
   .enum(['true', 'false', '1', '0', ''])
@@ -32,16 +37,19 @@ const schema = z.object({
 export type Config = z.infer<typeof schema>
 
 /**
- * Reads configuration from the environment. If an env file exists at `envFile` it is loaded first
+ * Reads configuration from the environment, after loading the repo-root `.env` if there is one
  * (values already present in the environment win, as with `node --env-file`).
  * AWS credentials are deliberately not parsed here: the AWS SDK reads them itself.
  */
-export function loadConfig(envFile?: string): Config {
-  if (envFile && existsSync(envFile)) process.loadEnvFile(envFile)
+export function loadConfig(envFile = resolve(REPO_ROOT, '.env')): Config {
+  if (existsSync(envFile)) process.loadEnvFile(envFile)
   const parsed = schema.safeParse(process.env)
   if (!parsed.success) {
     const problems = parsed.error.issues.map((i) => `  ${i.path.join('.')}: ${i.message}`).join('\n')
     throw new Error(`Invalid configuration:\n${problems}`)
   }
-  return parsed.data
+  const config = parsed.data
+  // The api and the worker start in different directories but must open the same database file.
+  if (!isAbsolute(config.DATABASE_PATH)) config.DATABASE_PATH = resolve(REPO_ROOT, config.DATABASE_PATH)
+  return config
 }
