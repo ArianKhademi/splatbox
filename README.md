@@ -241,17 +241,19 @@ Measured on an Apple M4 (10 cores, 24 GB), macOS 26.6, Blender 4.5.14 LTS, Chrom
 | What | Result | How |
 | --- | --- | --- |
 | Median GLB size reduction | **94.5%** over 13 assets; 92.1% over the 11 third-party ones | `npm run bench` |
-| Pair sync, per rendered frame | `video.currentTime` vs `mixer.time`: max 0.5 ms, mean 0.3 ms over 150 frames (tolerance: 33.3 ms, one frame at 30 fps) | `web/e2e/pair.spec.ts` |
-| Pair sync, against the frame on screen | pose vs the presentation timestamp of the displayed video frame: mean 25 ms, max 36 ms | same test, `requestVideoFrameCallback` |
+| Pair sync, per rendered frame | `video.currentTime` vs `mixer.time` over 150 frames of playback: worst frame 0.5 to 1.2 ms across four runs, mean 0.3 to 0.7 ms (tolerance: 33.3 ms, one frame at 30 fps) | `web/e2e/pair.spec.ts` |
+| Pair sync, against the frame on screen | pose vs the presentation timestamp of the displayed video frame: mean 25 to 36 ms, worst 36 to 38 ms across the same runs | same test, `requestVideoFrameCallback` |
 | Frame rate, 63,488-triangle skinned character playing | 60.2 fps, 95th-percentile frame 16.7 ms (display-capped) | `PERF=1 npx playwright test perf` |
 | Renderer memory across 50 asset switches | geometries 2, textures 3 after every cycle | `web/e2e/memory.spec.ts` |
 | Convert job | about 1 s per asset | `scripts/run_pipeline.ts` |
 | Turntable job | about 4 to 5 s per asset in Blender; 2.5 s for a 150k-splat scene in Chromium | `scripts/run_pipeline.ts` |
 | Frame rate with the CPU throttled 4x | 60.2 fps (the GPU is not throttled) | same perf test |
 
-The second sync row is the honest caveat to the first: `currentTime` is a continuous clock that
-runs ahead of the frame currently displayed, so the pose leads the picture by up to about one
-video frame.
+The second sync row is the honest caveat to the first. `currentTime` is a continuous clock that
+runs ahead of the frame currently displayed, so although the two clocks agree to about a
+millisecond, the pose leads the picture on screen by roughly one video frame. Posing from
+`requestVideoFrameCallback`'s media time instead would close that gap at the cost of the first
+number; that trade has not been made.
 
 ## Limitations
 
