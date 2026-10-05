@@ -1,5 +1,5 @@
 import { DropInViewer, SceneFormat, SceneRevealMode, type SplatMesh } from '@mkkellogg/gaussian-splats-3d'
-import { Box3, Sphere, Vector3, type Material } from 'three'
+import { Box3, Sphere, Vector3, type Material, type ShaderMaterial, type Texture } from 'three'
 import type { SplatFormat } from './types'
 
 /**
@@ -27,11 +27,21 @@ export function createSplatViewer(url: string, format: SplatFormat, alphaThresho
   return { viewer, loaded }
 }
 
+/**
+ * Frees everything a splat viewer holds on the GPU. The library's own dispose() covers the splat
+ * mesh, the data textures it keeps track of, and the sort worker, but it misses two things, and
+ * each of them leaked once per scene opened until the asset-switching test caught it:
+ *   - the invisible helper mesh DropInViewer adds to hook into the render loop (one geometry), and
+ *   - a 2x2 placeholder texture it binds to a sampler uniform the shader does not use (one texture).
+ */
 export function disposeSplatViewer(viewer: DropInViewer): void {
-  // dispose() frees the splat mesh, its data textures and the sort worker, but not the invisible
-  // helper mesh DropInViewer adds to hook the render loop; without this one geometry leaks per scene.
   viewer.callbackMesh.geometry.dispose()
   ;(viewer.callbackMesh.material as Material).dispose()
+  // Rather than name the placeholder, dispose every texture the splat material references.
+  const uniforms = (viewer.splatMesh?.material as ShaderMaterial | undefined)?.uniforms ?? {}
+  for (const uniform of Object.values(uniforms)) {
+    if ((uniform.value as Texture | null)?.isTexture) (uniform.value as Texture).dispose()
+  }
   // A scene that is still downloading is aborted by dispose(), which rejects; nothing to handle.
   viewer.dispose().catch(() => undefined)
 }
