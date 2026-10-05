@@ -6,6 +6,9 @@
  *
  *   npx tsx scripts/run_pipeline.ts            (api on http://localhost:4000, token from .env)
  *   npx tsx scripts/run_pipeline.ts --reset    delete every existing asset first
+ *   npx tsx scripts/run_pipeline.ts --only "Fox,Avocado scene"
+ *                                              a quick check with a few assets; prints the table
+ *                                              instead of rewriting the docs
  */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { cpus } from 'node:os'
@@ -77,7 +80,9 @@ const seconds = (job: Job | undefined) => (job?.durationMs != null ? (job.durati
 
 async function main(): Promise<void> {
   const manifest = JSON.parse(readFileSync(join(ROOT, 'samples/manifest.json'), 'utf8')) as { benchmark: { file: string }[] }
-  const uploads: Upload[] = [
+  const onlyArg = process.argv.indexOf('--only')
+  const only = onlyArg >= 0 ? new Set(process.argv[onlyArg + 1]?.split(',')) : null
+  const everything: Upload[] = [
     ...manifest.benchmark.map(({ file }) => ({
       name: basename(file, extname(file)),
       kind: 'character' as const,
@@ -94,6 +99,7 @@ async function main(): Promise<void> {
       ],
     },
   ]
+  const uploads = only ? everything.filter((item) => only.has(item.name)) : everything
 
   if (process.argv.includes('--reset')) {
     const existing = await call<{ items: Asset[] }>('/api/assets?limit=100')
@@ -134,6 +140,12 @@ async function main(): Promise<void> {
   const turntableTimes = assets.map((a) => a.jobs.find((j) => j.type === 'turntable')?.durationMs).filter((ms): ms is number => ms != null)
   const convertTimes = assets.map((a) => a.jobs.find((j) => j.type === 'convert')?.durationMs).filter((ms): ms is number => ms != null)
   const mean = (values: number[]) => values.reduce((a, b) => a + b, 0) / values.length / 1000
+
+  if (only) {
+    console.log(rows.join('\n'))
+    console.log(`${assets.length - failed.length} ready, ${failed.length} failed, ${wall.toFixed(0)} s wall-clock`)
+    process.exit(failed.length > 0 ? 1 : 0)
+  }
 
   mkdirSync(join(DOCS, 'thumbnails'), { recursive: true })
   writeFileSync(

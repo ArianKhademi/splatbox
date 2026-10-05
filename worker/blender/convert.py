@@ -27,10 +27,9 @@ import bpy
 import numpy as np
 
 
-
 def import_gltf(path):
-    # Without this the importer adds an icosphere mesh to draw bones with, which would be counted
-    # (and exported) as part of the asset.
+    # Without this the importer adds an icosphere mesh to draw bones with, and the triangle count
+    # below would include it.
     bpy.ops.import_scene.gltf(filepath=path, disable_bone_shape=True)
 
 
