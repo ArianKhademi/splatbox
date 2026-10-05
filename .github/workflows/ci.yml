@@ -1,0 +1,104 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Blender 4.5 LTS, the same pinned build as worker/Dockerfile.
+  BLENDER_VERSION: "4.5.14"
+  BLENDER_SHA256: 9ba871ff2ecd36526b77432745980b7e6664ecd0c7ca11c48849073dcfe06da3
+  BLENDER_URL: https://mirrors.ocf.berkeley.edu/blender/release/Blender4.5/blender-4.5.14-linux-x64.tar.xz
+
+jobs:
+  checks:
+    name: Lint, typecheck, unit and api tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      # The api route tests run against a real S3 API and a real Redis.
+      - name: Start Redis and MinIO
+        run: docker compose up -d redis minio
+      - name: Unit and api tests
+        run: npm test
+        env:
+          # Without Blender on this runner the worker's integration suite skips itself;
+          # the blender job below runs it for real.
+          TEST_S3_ENDPOINT: http://localhost:9000
+          TEST_REDIS_URL: redis://localhost:6379
+
+  blender:
+    name: Blender integration test and conversion benchmark
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Cache Blender
+        id: blender-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/blender
+          key: blender-${{ env.BLENDER_VERSION }}-linux-x64
+      - name: Download Blender ${{ env.BLENDER_VERSION }}
+        if: steps.blender-cache.outputs.cache-hit != 'true'
+        run: |
+          curl -fsSL "$BLENDER_URL" -o /tmp/blender.tar.xz
+          echo "$BLENDER_SHA256  /tmp/blender.tar.xz" | sha256sum -c -
+          mkdir -p ~/blender
+          tar -xJf /tmp/blender.tar.xz -C ~/blender --strip-components=1
+      - name: Blender runtime libraries
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libgl1 libegl1 libxi6 libxxf86vm1 libxfixes3 libxrender1 libxkbcommon0 libsm6
+      - run: echo "BLENDER_BIN=$HOME/blender/blender" >> "$GITHUB_ENV"
+      - name: Blender integration test
+        run: npm test --workspace worker
+        env:
+          REQUIRE_BLENDER: "1"
+      - name: Cache sample downloads
+        uses: actions/cache@v4
+        with:
+          path: samples/assets
+          key: samples-${{ hashFiles('samples/manifest.json', 'scripts/blender/*.py') }}
+      - name: Build the sample set
+        run: npm run samples
+      - name: Conversion benchmark (fails if the median drops below the committed baseline)
+        run: npm run bench -- --check
+      - uses: actions/upload-artifact@v4
+        with:
+          name: conversion-results
+          path: docs/conversion_results.md
+
+  e2e:
+    name: Viewer end-to-end tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      # Runs against the production build with the bundled demo assets; WebGL is software-rendered here.
+      - run: npm run e2e --workspace web
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-results
+          path: web/test-results
+          if-no-files-found: ignore
