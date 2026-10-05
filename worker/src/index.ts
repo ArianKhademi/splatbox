@@ -25,7 +25,14 @@ const connection = createRedis(config.REDIS_URL)
 
 const worker = new Worker(
   QUEUE_NAME,
-  createProcessor({ db, storage, blender: createBlenderTools(blenderBin), splat, workRoot, turntableEngine: config.TURNTABLE_ENGINE }),
+  createProcessor({
+    db,
+    storage,
+    blender: createBlenderTools(blenderBin, config.BLENDER_TIMEOUT_SECONDS * 1000),
+    splat,
+    workRoot,
+    turntableEngine: config.TURNTABLE_ENGINE,
+  }),
   // Each job is one Blender (or Chromium) process, so concurrency is how many run side by side.
   { connection, concurrency: config.WORKER_CONCURRENCY },
 )

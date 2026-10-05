@@ -31,6 +31,8 @@ const schema = z.object({
   WORKER_CONCURRENCY: z.coerce.number().int().min(1).default(2),
   BLENDER_BIN: optionalUrl,
   TURNTABLE_ENGINE: z.enum(['eevee', 'workbench']).default('eevee'),
+  /** A Blender run that takes longer than this is killed and the job attempt fails. */
+  BLENDER_TIMEOUT_SECONDS: z.coerce.number().int().min(10).default(600),
   RENDER_PAGE_URL: z.string().default('http://localhost:5173/render.html'),
 })
 

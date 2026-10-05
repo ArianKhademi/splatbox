@@ -56,17 +56,17 @@ export interface BlenderTools {
   turntable(input: string, outDir: string, options: TurntableOptions): Promise<TurntableReport>
 }
 
-export function createBlenderTools(blenderBin: string): BlenderTools {
+export function createBlenderTools(blenderBin: string, timeoutMs = 10 * 60_000): BlenderTools {
   return {
     convert(input, output, options = DEFAULT_CONVERT_OPTIONS) {
       const args = ['--in', input, '--out', output, '--max-texture', String(options.maxTexture)]
       if (options.draco) args.push('--draco')
       args.push('--texture-format', options.textureFormat, '--texture-quality', String(options.textureQuality))
-      return runBlender<ConvertReport>({ blenderBin, script: CONVERT_SCRIPT, args })
+      return runBlender<ConvertReport>({ blenderBin, script: CONVERT_SCRIPT, args, timeoutMs })
     },
     turntable(input, outDir, options) {
       const args = ['--in', input, '--out-dir', outDir, '--frames', String(options.frames), '--size', String(options.size), '--engine', options.engine]
-      return runBlender<TurntableReport>({ blenderBin, script: TURNTABLE_SCRIPT, args })
+      return runBlender<TurntableReport>({ blenderBin, script: TURNTABLE_SCRIPT, args, timeoutMs })
     },
   }
 }

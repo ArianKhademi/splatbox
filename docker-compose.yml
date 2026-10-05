@@ -59,6 +59,8 @@ services:
       <<: *app-env
       WORKER_CONCURRENCY: "2"
       TURNTABLE_ENGINE: ${TURNTABLE_ENGINE:-eevee}
+      # Containers render on the CPU (Mesa), so give Blender longer than the 10 minute default.
+      BLENDER_TIMEOUT_SECONDS: ${BLENDER_TIMEOUT_SECONDS:-1800}
       RENDER_PAGE_URL: http://web/render.html
     # The api and the worker open the same SQLite file through this shared volume.
     volumes: ["app-data:/data"]
