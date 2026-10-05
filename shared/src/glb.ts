@@ -15,6 +15,7 @@ export interface GlbAnimation {
 
 export interface GlbInfo {
   bytes: number
+  /** Triangles drawn by the scene: each mesh counted once per node that instances it. */
   triangles: number
   meshes: number
   primitives: number
@@ -43,6 +44,7 @@ interface Primitive {
 
 interface GltfJson {
   accessors?: Accessor[]
+  nodes?: { mesh?: number }[]
   meshes?: { primitives: Primitive[] }[]
   images?: { mimeType?: string; uri?: string }[]
   skins?: { joints: number[] }[]
@@ -89,9 +91,13 @@ export function inspectGlb(buf: Uint8Array): GlbInfo {
     channels: a.channels.length,
   }))
 
+  // A mesh referenced by several nodes is drawn once per node, so count triangles per instance.
+  const meshTriangles = meshes.map((m) => m.primitives.reduce((sum, p) => sum + primitiveTriangles(p, accessors), 0))
+  const triangles = (gltf.nodes ?? []).reduce((sum, node) => sum + (node.mesh === undefined ? 0 : (meshTriangles[node.mesh] ?? 0)), 0)
+
   return {
     bytes: buf.byteLength,
-    triangles: prims.reduce((sum, p) => sum + primitiveTriangles(p, accessors), 0),
+    triangles,
     meshes: meshes.length,
     primitives: prims.length,
     dracoPrimitives: prims.filter((p) => p.extensions?.KHR_draco_mesh_compression).length,
