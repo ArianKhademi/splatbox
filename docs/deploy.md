@@ -84,11 +84,33 @@ Try it in the foreground first:
 cloudflared tunnel run splatbox
 ```
 
-When `https://splatbox.example.com` loads, install it as a login item so it survives reboots:
+When `https://splatbox.example.com` loads, install it as a system service so it survives reboots.
+The service runs as root and reads `/etc/cloudflared/config.yml`, so copy the config there first:
 
 ```bash
-cloudflared service install
+sudo mkdir -p /etc/cloudflared && sudo cp ~/.cloudflared/config.yml /etc/cloudflared/config.yml
 ```
+
+```bash
+sudo cloudflared service install
+```
+
+Check `cloudflared tunnel info <name>` lists a connector. If it does not, and
+`/Library/Logs/com.cloudflare.cloudflared.err.log` repeats `use cloudflared tunnel run to start
+tunnel`, the launch item (cloudflared 2026.10 on macOS) was written without the `tunnel run`
+arguments. Add them and reload it:
+
+```bash
+sudo /usr/libexec/PlistBuddy -c "Add :ProgramArguments:1 string tunnel" -c "Add :ProgramArguments:2 string run" /Library/LaunchDaemons/com.cloudflare.cloudflared.plist
+```
+
+```bash
+sudo launchctl bootout system/com.cloudflare.cloudflared && sudo launchctl bootstrap system /Library/LaunchDaemons/com.cloudflare.cloudflared.plist
+```
+
+(`launchctl kickstart` is not enough after editing a plist; it restarts the definition launchd
+already has loaded.) One tunnel can carry several hostnames, each as its own `ingress` entry
+pointing at a different local port, so a second app on the same machine needs no second tunnel.
 
 ## 3. Let the browser talk to the bucket from the new origin
 
