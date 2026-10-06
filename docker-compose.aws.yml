@@ -1,0 +1,29 @@
+# Override that swaps the local MinIO for Amazon S3. Use it together with the main file:
+#
+#   docker compose -f docker-compose.yml -f docker-compose.aws.yml up -d
+#
+# Bucket, region and keys come from .env (the same four values the native api and worker read);
+# the MinIO-only settings are blanked so the SDK uses the real S3 endpoints.
+x-s3: &s3
+  S3_BUCKET: ${S3_BUCKET:?set S3_BUCKET in .env}
+  S3_REGION: ${S3_REGION:-us-east-1}
+  S3_ENDPOINT: ""
+  S3_PUBLIC_ENDPOINT: ""
+  S3_FORCE_PATH_STYLE: ""
+  S3_CREATE_BUCKET: ""
+  AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:?set AWS_ACCESS_KEY_ID in .env}
+  AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:?set AWS_SECRET_ACCESS_KEY in .env}
+
+services:
+  api:
+    environment: *s3
+    depends_on: !reset
+      redis: { condition: service_healthy }
+  worker:
+    environment: *s3
+    depends_on: !reset
+      redis: { condition: service_healthy }
+      api: { condition: service_started }
+  minio:
+    # Not needed with S3; keep the service defined so `docker compose down` still knows it.
+    profiles: [minio]

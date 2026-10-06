@@ -1,6 +1,8 @@
 # Everything Splatbox needs on one machine:
 #   docker compose up              the whole stack; open http://localhost:8080
 #   docker compose up -d redis minio   only the backing services, for running api/worker/web with npm
+#   docker compose -f docker-compose.yml -f docker-compose.aws.yml up -d
+#                                  the same, but storing in Amazon S3 (see docker-compose.aws.yml)
 # Host ports can be moved with REDIS_PORT, MINIO_PORT, MINIO_CONSOLE_PORT, API_HOST_PORT and WEB_PORT.
 name: splatbox
 
@@ -28,6 +30,7 @@ services:
       interval: 3s
       timeout: 3s
       retries: 20
+    restart: unless-stopped
 
   minio:
     # Local stand-in for Amazon S3. MinIO no longer publishes images on Docker Hub; this is
@@ -39,6 +42,7 @@ services:
       MINIO_ROOT_PASSWORD: splatbox-secret
     ports: ["${MINIO_PORT:-9000}:9000", "${MINIO_CONSOLE_PORT:-9001}:9001"]
     volumes: ["minio-data:/data"]
+    restart: unless-stopped
 
   api:
     build: { context: ., dockerfile: api/Dockerfile }
@@ -50,6 +54,7 @@ services:
     depends_on:
       redis: { condition: service_healthy }
       minio: { condition: service_started }
+    restart: unless-stopped
 
   worker:
     build: { context: ., dockerfile: worker/Dockerfile }
@@ -68,11 +73,13 @@ services:
       redis: { condition: service_healthy }
       minio: { condition: service_started }
       api: { condition: service_started }
+    restart: unless-stopped
 
   web:
     build: { context: ., dockerfile: web/Dockerfile }
     ports: ["${WEB_PORT:-8080}:80"]
     depends_on: [api]
+    restart: unless-stopped
 
 volumes:
   minio-data:
