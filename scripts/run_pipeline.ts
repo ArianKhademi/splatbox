@@ -78,6 +78,13 @@ async function upload(item: Upload): Promise<string> {
 
 const seconds = (job: Job | undefined) => (job?.durationMs != null ? (job.durationMs / 1000).toFixed(1) : '-')
 
+/** Which object store the run went through, from the same variables the api and worker read. */
+function storageLabel(): string {
+  const endpoint = process.env.S3_ENDPOINT
+  if (endpoint) return `S3-compatible store at ${endpoint} (bucket "${process.env.S3_BUCKET}")`
+  return `Amazon S3, bucket "${process.env.S3_BUCKET}" in ${process.env.S3_REGION ?? 'us-east-1'}`
+}
+
 async function main(): Promise<void> {
   const manifest = JSON.parse(readFileSync(join(ROOT, 'samples/manifest.json'), 'utf8')) as { benchmark: { file: string }[] }
   const onlyArg = process.argv.indexOf('--only')
@@ -166,7 +173,7 @@ async function main(): Promise<void> {
       '',
       `Mean convert job ${mean(convertTimes).toFixed(1)} s; mean turntable job ${mean(turntableTimes).toFixed(1)} s (24 frames at 512×512).`,
       '',
-      `Hardware: ${cpus()[0]?.model}, ${cpus().length} cores, ${process.platform} ${process.arch}. Storage: local MinIO. ` +
+      `Hardware: ${cpus()[0]?.model}, ${cpus().length} cores, ${process.platform} ${process.arch}. Storage: ${storageLabel()}. ` +
         'Blender renders with EEVEE on the GPU; splat scenes render in headless Chromium.',
       '',
     ].join('\n'),
