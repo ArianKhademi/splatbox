@@ -167,9 +167,9 @@ Requirements: Node 20, Docker, and for local development Blender 4.5 LTS.
 docker compose up --build
 ```
 
-Then open http://localhost:8080 and sign in with the token from `docker-compose.yml`
-(`dev-token-change-me-0000`). If a port is taken, move it with `WEB_PORT`, `API_HOST_PORT`,
-`MINIO_PORT` or `REDIS_PORT`.
+Then open http://localhost:8080. Browsing needs no sign-in; to upload, sign in with the token
+from `docker-compose.yml` (`dev-token-change-me-0000`, overridable through `.env`). If a port is
+taken, move it with `WEB_PORT`, `API_HOST_PORT`, `MINIO_PORT` or `REDIS_PORT`.
 
 Containers have no GPU, so the worker renders with Mesa's software OpenGL, and the worker image is
 `linux/amd64` because Blender only publishes x86-64 Linux builds. On an Apple Silicon Mac that
@@ -200,7 +200,11 @@ In `.env`, remove `S3_ENDPOINT`, `S3_PUBLIC_ENDPOINT`, `S3_FORCE_PATH_STYLE` and
 aws s3api put-bucket-cors --bucket "$S3_BUCKET" --cors-configuration file://docs/s3-cors.json
 ```
 
-Nothing else changes: the code path is the same AWS SDK calls either way.
+Nothing else changes: the code path is the same AWS SDK calls either way. Under Docker, add the
+override file: `docker compose -f docker-compose.yml -f docker-compose.aws.yml up -d`.
+
+**Putting it on a public URL** (a kept-on machine plus a Cloudflare Tunnel, no hosting bill) is
+written up in [docs/deploy.md](docs/deploy.md).
 
 **Scripts**
 
@@ -224,7 +228,7 @@ npm run lint && npm run typecheck
 | --- | --- |
 | `web/src/viewer/*.test.ts(x)` | The timeline state machine; the sync clock against a fake video and a real `AnimationMixer`; clip matching; clock-driven playback inside the render loop (`@react-three/test-renderer`) |
 | `web/e2e/` | Each asset kind loads and draws; scrubbing with the real mouse; skeleton overlay; external clips; pair sync; 50 asset switches with `renderer.info.memory` unchanged; an opt-in frame-rate measurement |
-| `api/test/` | Routes through supertest against real MinIO and Redis: presigned PUT and GET round trips, validation, pagination, the convert/turntable flow, failed jobs, delete |
+| `api/test/` | Routes through supertest against real MinIO and Redis: open reads and token-gated writes, presigned PUT and GET round trips, validation, pagination, the convert/turntable flow, failed jobs, delete |
 | `worker/test/` | Job handlers with Blender mocked (24 frames rendered, outputs uploaded, rows updated); the processor's retry bookkeeping; and real Blender converting a rigged GLB |
 | `shared/test/` | The SQLite store and the GLB inspector |
 
@@ -275,7 +279,8 @@ number; that trade has not been made.
 - **Frame numbers assume 30 fps.** glTF stores keyframe times in seconds and no frame rate.
 - **The sample splat scene is synthesized** from a mesh by `scripts/make_splat.ts`, not captured.
   It is a valid splat file in both layouts, without view-dependent colour.
-- **Single host.** The api and the worker share one SQLite file. Auth is one shared token.
+- **Single host.** The api and the worker share one SQLite file. Auth is one shared token:
+  anyone can browse and view; the token is needed to upload, retry or delete.
 - **Node 20** is what the spec pins and what everything here is tested on. It is past its
   end-of-life date: the AWS SDK will require Node 22 from January 2027, and `better-sqlite3` is
   pinned to 12.8.0 because later releases no longer ship Node 20 binaries.

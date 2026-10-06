@@ -87,6 +87,8 @@ hour, so repeated list calls return identical URLs and the browser cache can hit
 
 ## Auth
 
-Demo-grade and deliberately minimal: one shared token from the environment. Scripts send it as a
-bearer token; the web app exchanges it once for an HTTP-only cookie holding an expiry and an HMAC
-of it. There are no users or per-asset permissions.
+Demo-grade and deliberately minimal. Reading (listing, viewing, failed jobs, queue counts) is
+open to anyone with the link, so a visitor can browse without an account. Creating, retrying and
+deleting assets need one shared token from the environment: scripts send it as a bearer token;
+the web app exchanges it once for an HTTP-only cookie holding an expiry and an HMAC of it. There
+are no users or per-asset permissions.
