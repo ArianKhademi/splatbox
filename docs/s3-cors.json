@@ -1,10 +1,22 @@
 {
   "CORSRules": [
     {
-      "AllowedOrigins": ["http://localhost:5173", "http://localhost:8080"],
-      "AllowedMethods": ["GET", "PUT", "HEAD"],
-      "AllowedHeaders": ["*"],
-      "ExposeHeaders": ["ETag"],
+      "AllowedOrigins": [
+        "http://localhost:5173",
+        "http://localhost:8080",
+        "https://splatbox.khademi.tech"
+      ],
+      "AllowedMethods": [
+        "GET",
+        "PUT",
+        "HEAD"
+      ],
+      "AllowedHeaders": [
+        "*"
+      ],
+      "ExposeHeaders": [
+        "ETag"
+      ],
       "MaxAgeSeconds": 3600
     }
   ]
