@@ -16,8 +16,12 @@ test('upload in the browser, convert, thumbnail, view, delete', async ({ page })
   const name = `e2e upload ${Date.now()}`
 
   await page.goto(`${STACK_URL}/#/`)
-  await page.getByLabel('API token').fill(process.env.API_TOKEN ?? '')
+  // Browsing is open; uploading needs the token, exchanged for a session cookie here.
+  await expect(page.getByTestId('asset-grid')).toBeVisible()
   await page.getByRole('button', { name: 'Sign in' }).click()
+  await page.getByLabel('API token').fill(process.env.API_TOKEN ?? '')
+  await page.getByRole('button', { name: 'Use token' }).click()
+  await expect(page.getByRole('button', { name: 'Sign out' })).toBeVisible()
 
   // Upload through the form: create, PUT straight to storage, complete.
   await page.getByRole('button', { name: 'Upload', exact: true }).click()

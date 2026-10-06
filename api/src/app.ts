@@ -9,7 +9,7 @@ import {
   type Db,
   type Storage,
 } from '@splatbox/shared'
-import Fastify, { type FastifyInstance, type FastifyReply } from 'fastify'
+import Fastify, { type FastifyInstance, type FastifyReply, type FastifyRequest } from 'fastify'
 import { randomUUID } from 'node:crypto'
 import { z, ZodError } from 'zod'
 import { bearerToken, issueSession, readCookie, SESSION_COOKIE, SESSION_TTL_MS, tokenMatches, verifySession } from './auth'
@@ -118,17 +118,26 @@ export function buildApp(deps: AppDeps): FastifyInstance {
     return reply.header('set-cookie', `${SESSION_COOKIE}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`).code(204).send()
   })
 
-  // --- everything below needs the bearer token or a valid session cookie
+  function isAuthenticated(req: FastifyRequest): boolean {
+    const byToken = tokenMatches(bearerToken(req.headers.authorization), deps.apiToken)
+    const byCookie = verifySession(readCookie(req.headers.cookie, SESSION_COOKIE), deps.sessionSecret)
+    return byToken || byCookie
+  }
+
+  /** Tells the web app whether its cookie is still good, so it can show or hide the upload controls. */
+  app.get('/api/session', async (req) => ({ authenticated: isAuthenticated(req) }))
+
+  // Reading is open: anyone with the link can browse and view. Anything that creates, re-runs or
+  // removes an asset needs the bearer token or a session cookie obtained with it.
+  const writer = {
+    preHandler: async (req: FastifyRequest) => {
+      if (!isAuthenticated(req)) throw new HttpError(401, 'authentication required')
+    },
+  }
 
   app.register(async (api) => {
-    api.addHook('onRequest', async (req) => {
-      const byToken = tokenMatches(bearerToken(req.headers.authorization), deps.apiToken)
-      const byCookie = verifySession(readCookie(req.headers.cookie, SESSION_COOKIE), deps.sessionSecret)
-      if (!byToken && !byCookie) throw new HttpError(401, 'authentication required')
-    })
-
     /** Step 1 of an upload: register the asset and get one presigned PUT URL per file. */
-    api.post('/api/assets', async (req, reply: FastifyReply) => {
+    api.post('/api/assets', writer, async (req, reply: FastifyReply) => {
       const body = createAssetBody.parse(req.body)
       const required = REQUIRED_ROLES[body.kind]
       const roles = body.files.map((file) => file.role)
@@ -154,7 +163,7 @@ export function buildApp(deps: AppDeps): FastifyInstance {
     })
 
     /** Step 2: the browser has PUT the files; verify they arrived and queue the jobs. */
-    api.post('/api/assets/:id/complete', async (req) => {
+    api.post('/api/assets/:id/complete', writer, async (req) => {
       const asset = mustGetAsset(req.params)
       if (asset.status !== 'uploading') throw new HttpError(409, `asset is already ${asset.status}`)
       for (const role of REQUIRED_ROLES[asset.kind]) {
@@ -190,7 +199,7 @@ export function buildApp(deps: AppDeps): FastifyInstance {
     api.get('/api/assets/:id', async (req) => ({ asset: await dto(mustGetAsset(req.params)) }))
 
     /** Re-queues the jobs of a failed asset. */
-    api.post('/api/assets/:id/retry', async (req) => {
+    api.post('/api/assets/:id/retry', writer, async (req) => {
       const asset = mustGetAsset(req.params)
       if (asset.status !== 'failed') throw new HttpError(409, `only failed assets can be retried; this one is ${asset.status}`)
       await queue.removeJobs(db.listJobs([asset.id]).map((job) => job.id))
@@ -199,7 +208,7 @@ export function buildApp(deps: AppDeps): FastifyInstance {
       return { asset: await dto(db.getAsset(asset.id)!) }
     })
 
-    api.delete('/api/assets/:id', async (req, reply) => {
+    api.delete('/api/assets/:id', writer, async (req, reply) => {
       const asset = mustGetAsset(req.params)
       await queue.removeJobs(db.listJobs([asset.id]).map((job) => job.id))
       for (const prefix of keys.prefixes(asset.id)) await storage.deletePrefix(prefix)

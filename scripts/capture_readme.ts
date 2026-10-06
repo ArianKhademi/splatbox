@@ -137,8 +137,10 @@ async function captureApp(browser: Browser): Promise<void> {
   }
 
   await page.goto(`${WEB}/#/`)
-  await page.getByLabel('API token').fill(process.env.API_TOKEN ?? '')
   await page.getByRole('button', { name: 'Sign in' }).click()
+  await page.getByLabel('API token').fill(process.env.API_TOKEN ?? '')
+  await page.getByRole('button', { name: 'Use token' }).click()
+  await page.getByRole('button', { name: 'Sign out' }).waitFor()
   await page.getByTestId('asset-card').first().waitFor()
   // Thumbnails load lazily as cards come into view; wait for the visible ones.
   await page.waitForFunction(() => {

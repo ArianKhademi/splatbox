@@ -34,22 +34,36 @@ describe('api authentication', () => {
     await t.request.get('/api/health').expect(200, { ok: true })
   })
 
-  it('rejects requests without credentials or with a wrong token', async () => {
-    await t.request.get('/api/assets').expect(401)
-    await t.request.get('/api/assets').set('Authorization', 'Bearer nope').expect(401)
+  const upload = { name: 'x', kind: 'character', files: [{ role: 'source', filename: 'a.glb', contentType: 'model/gltf-binary' }] }
+
+  it('lets anyone read, but not write', async () => {
+    await t.request.get('/api/assets').expect(200)
+    await t.request.get('/api/jobs/failed').expect(200)
+    await t.request.get('/api/queue').expect(200)
+    await t.request.post('/api/assets').send(upload).expect(401)
+    await t.request.post('/api/assets/00000000-0000-4000-8000-000000000000/complete').expect(401)
+    await t.request.post('/api/assets/00000000-0000-4000-8000-000000000000/retry').expect(401)
+    await t.request.delete('/api/assets/00000000-0000-4000-8000-000000000000').expect(401)
+    await t.request.post('/api/assets').set('Authorization', 'Bearer nope').send(upload).expect(401)
   })
 
-  it('accepts the bearer token', async () => {
-    await t.request.get('/api/assets').set('Authorization', `Bearer ${TOKEN}`).expect(200)
+  it('accepts the bearer token for writes', async () => {
+    await t.request.post('/api/assets').set('Authorization', `Bearer ${TOKEN}`).send(upload).expect(201)
   })
 
-  it('exchanges the token for an http-only session cookie that then authenticates', async () => {
+  it('exchanges the token for an http-only session cookie that then authenticates writes', async () => {
+    expect((await t.request.get('/api/session').expect(200)).body).toEqual({ authenticated: false })
     await t.request.post('/api/session').send({ token: 'wrong' }).expect(401)
     const login = await t.request.post('/api/session').send({ token: TOKEN }).expect(204)
     const cookie = login.headers['set-cookie']![0]!
     expect(cookie).toMatch(/^sb_session=/)
     expect(cookie).toMatch(/HttpOnly/)
-    await t.request.get('/api/assets').set('Cookie', cookie.split(';')[0]!).expect(200)
-    await t.request.get('/api/assets').set('Cookie', 'sb_session=9999999999999.forged').expect(401)
+    const session = cookie.split(';')[0]!
+    expect((await t.request.get('/api/session').set('Cookie', session).expect(200)).body).toEqual({ authenticated: true })
+    await t.request.post('/api/assets').set('Cookie', session).send(upload).expect(201)
+    await t.request.post('/api/assets').set('Cookie', 'sb_session=9999999999999.forged').send(upload).expect(401)
+    // Signing out clears the cookie.
+    const logout = await t.request.delete('/api/session').expect(204)
+    expect(logout.headers['set-cookie']![0]).toMatch(/Max-Age=0/)
   })
 })

@@ -3,6 +3,7 @@ import { statusLabel } from '../components/AssetCard'
 import { Workspace } from '../components/Workspace'
 import { api, formatBytes, toClipSource, toViewerAsset, type AssetDto } from '../lib/api'
 import { navigate } from '../lib/router'
+import { useSession } from '../lib/session'
 import type { ViewerAsset } from '../viewer/types'
 
 const POLL_MS = 2500
@@ -24,6 +25,7 @@ function useStableViewerAsset(asset: AssetDto | null): ViewerAsset | null {
 }
 
 function Details({ asset, onChanged }: { asset: AssetDto; onChanged: () => void }) {
+  const session = useSession()
   const stats = asset.stats
   async function remove() {
     if (!window.confirm(`Delete "${asset.name}" and its files?`)) return
@@ -81,16 +83,18 @@ function Details({ asset, onChanged }: { asset: AssetDto; onChanged: () => void 
           </li>
         ))}
       </ul>
-      <div className="actions">
-        {asset.status === 'failed' && (
-          <button type="button" onClick={() => void api.retry(asset.id).then(onChanged)}>
-            Retry jobs
+      {session.status === 'signed-in' && (
+        <div className="actions">
+          {asset.status === 'failed' && (
+            <button type="button" onClick={() => void api.retry(asset.id).then(onChanged)}>
+              Retry jobs
+            </button>
+          )}
+          <button type="button" className="danger" onClick={() => void remove()}>
+            Delete
           </button>
-        )}
-        <button type="button" className="danger" onClick={() => void remove()}>
-          Delete
-        </button>
-      </div>
+        </div>
+      )}
     </aside>
   )
 }

@@ -95,6 +95,25 @@ button.danger {
   color: var(--text);
 }
 
+.topbar .session {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.topbar .session .login {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  align-items: center;
+}
+
+.topbar .session .login .error {
+  flex-basis: auto;
+}
+
 main {
   flex: 1;
   min-height: 0;
@@ -277,6 +296,11 @@ dd {
   gap: 4px;
   font-size: 12px;
   color: var(--muted);
+}
+
+.hint {
+  color: var(--muted);
+  font-size: 12px;
 }
 
 .upload .hint,

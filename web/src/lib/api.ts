@@ -68,7 +68,9 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export const api = {
+  session: () => request<{ authenticated: boolean }>('/session'),
   login: (token: string) => request<void>('/session', { method: 'POST', body: JSON.stringify({ token }) }),
+  logout: () => request<void>('/session', { method: 'DELETE' }),
   listAssets: (opts: { kind?: AssetKind; cursor?: string; limit?: number } = {}) => {
     const query = new URLSearchParams()
     if (opts.kind) query.set('kind', opts.kind)

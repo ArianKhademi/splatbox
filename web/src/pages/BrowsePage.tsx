@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { AssetCard } from '../components/AssetCard'
 import { UploadForm } from '../components/UploadForm'
 import { api, type AssetDto } from '../lib/api'
+import { useSession } from '../lib/session'
 import type { AssetKind } from '../viewer/types'
 
 const PAGE_SIZE = 24
@@ -13,6 +14,7 @@ function isSettled(asset: AssetDto): boolean {
 }
 
 export function BrowsePage() {
+  const session = useSession()
   const [kind, setKind] = useState<AssetKind | ''>('')
   const [items, setItems] = useState<AssetDto[]>([])
   const [nextCursor, setNextCursor] = useState<string | null>(null)
@@ -67,12 +69,20 @@ export function BrowsePage() {
             </button>
           ))}
         </div>
-        <button type="button" className="primary" onClick={() => setShowUpload((v) => !v)}>
-          {showUpload ? 'Close' : 'Upload'}
-        </button>
+        {session.status === 'signed-in' ? (
+          <button type="button" className="primary" onClick={() => setShowUpload((v) => !v)}>
+            {showUpload ? 'Close' : 'Upload'}
+          </button>
+        ) : (
+          session.status === 'signed-out' && <span className="hint">Sign in with the API token to upload.</span>
+        )}
       </div>
-      {showUpload && <UploadForm onUploaded={() => void refresh()} />}
-      {error && <p className="error">{error}</p>}
+      {showUpload && session.status === 'signed-in' && <UploadForm onUploaded={() => void refresh()} />}
+      {error && (
+        <p className="notice error">
+          The api is not reachable ({error}). The viewer still works on the bundled <a href="#/demo">demo assets</a>.
+        </p>
+      )}
       {!loading && items.length === 0 && !error && <p className="notice">Nothing here yet. Upload a model, a splat scene, or a video and motion pair.</p>}
       <div className="grid" data-testid="asset-grid">
         {items.map((asset) => (

@@ -24,6 +24,8 @@ export interface StorageOptions {
   /** Endpoint baked into presigned URLs, when browsers reach the store under a different host than the servers do. */
   publicEndpoint?: string
   forcePathStyle?: boolean
+  /** Explicit keys. Left out, the SDK's default chain applies (environment, shared config, instance role). */
+  credentials?: { accessKeyId: string; secretAccessKey: string }
 }
 
 /** Object keys. Everything an asset owns lives under one of three per-asset prefixes. */
@@ -52,6 +54,7 @@ export class Storage {
     const base: S3ClientConfig = {
       region: opts.region,
       forcePathStyle: opts.forcePathStyle,
+      credentials: opts.credentials,
       // Recent SDK versions checksum every PutObject by default, which adds x-amz-checksum-* /
       // x-amz-sdk-checksum-algorithm parameters to presigned PUT URLs. A browser doing a plain
       // fetch PUT never sends the matching checksum, so only compute them when S3 requires one.
