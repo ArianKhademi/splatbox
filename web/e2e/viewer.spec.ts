@@ -92,12 +92,23 @@ test.describe('character and clip playback', () => {
     await page.keyboard.press('ArrowRight')
     expect(await clockTime(page)).toBeCloseTo(Math.min(paused + 1 / 30, 0.7083), 3)
 
-    // Without loop, playback stops on the last frame.
+    // Without loop, playback stops on the last frame. At 2x the clip is over in 0.35 s, which on a
+    // slow machine is less than the time between a click and the next assertion, so the states the
+    // clock passes through are recorded in the page rather than sampled from the test.
     await page.getByLabel('Loop').uncheck()
     await page.getByLabel('Speed').selectOption('2')
+    await page.evaluate(() => {
+      const clock = window.__splatbox!.clock!
+      const seen: string[] = []
+      clock.subscribe(() => {
+        const { status } = clock.getState()
+        if (seen[seen.length - 1] !== status) seen.push(status)
+      })
+      ;(window as unknown as { __statuses: string[] }).__statuses = seen
+    })
     await page.getByRole('button', { name: 'Play' }).click()
-    expect((await clockState(page)).status).toBe('playing')
     await expect.poll(async () => (await clockState(page)).status).toBe('paused')
+    expect(await page.evaluate(() => (window as unknown as { __statuses: string[] }).__statuses)).toEqual(['playing', 'paused'])
     expect(await clockTime(page)).toBeCloseTo(0.7083, 3)
   })
 
