@@ -8,7 +8,7 @@ import { DemoPage } from './pages/DemoPage'
 export function App() {
   const route = useRoute()
   return (
-    <SessionProvider>
+    <SessionProvider enabled={route.page !== 'demo'}>
       <div className="app">
         <header className="topbar">
           <a className="brand" href="#/">

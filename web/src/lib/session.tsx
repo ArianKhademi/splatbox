@@ -15,15 +15,24 @@ export interface Session {
 
 const SessionContext = createContext<Session>({ status: 'checking', signIn: async () => undefined, signOut: async () => undefined })
 
-export function SessionProvider({ children }: { children: ReactNode }) {
+/** `enabled` is false on pages that never talk to the api (the demo page), so no request is made there. */
+export function SessionProvider({ enabled, children }: { enabled: boolean; children: ReactNode }) {
   const [status, setStatus] = useState<SessionStatus>('checking')
 
   useEffect(() => {
+    if (!enabled) {
+      setStatus('offline')
+      return
+    }
+    let cancelled = false
     api
       .session()
-      .then((s) => setStatus(s.authenticated ? 'signed-in' : 'signed-out'))
-      .catch(() => setStatus('offline'))
-  }, [])
+      .then((s) => !cancelled && setStatus(s.authenticated ? 'signed-in' : 'signed-out'))
+      .catch(() => !cancelled && setStatus('offline'))
+    return () => {
+      cancelled = true
+    }
+  }, [enabled])
 
   const signIn = useCallback(async (token: string) => {
     await api.login(token)
