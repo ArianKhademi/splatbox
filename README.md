@@ -112,32 +112,32 @@ All 16 sample assets uploaded through the api and processed by one worker
 (copied from [docs/pipeline_times.md](docs/pipeline_times.md), written by `scripts/run_pipeline.ts`):
 
 <!-- pipeline:start -->
-16 assets uploaded through the api and processed by one worker (concurrency 2): 16 ready, 0 failed, 47 s wall-clock from first upload to last thumbnail.
+16 assets uploaded through the api and processed by one worker (concurrency 2): 16 ready, 0 failed, 56 s wall-clock from first upload to last thumbnail.
 
 Times are job durations as recorded by the worker: download from storage, the Blender (or Chromium) run, encoding, and upload.
 
 | Asset | Kind | Status | Convert (s) | Turntable (s) | Turntable renderer | Size |
 | --- | --- | --- | ---: | ---: | --- | --- |
-| Fox | character | ready | 0.7 | 4.9 | blender BLENDER_EEVEE_NEXT | 159 → 108 KB (-31.9%) |
-| RiggedFigure | character | ready | 0.6 | 5.0 | blender BLENDER_EEVEE_NEXT | 49 → 26 KB (-47.1%) |
-| CesiumMan | character | ready | 0.7 | 5.0 | blender BLENDER_EEVEE_NEXT | 544 → 138 KB (-74.7%) |
-| CesiumMilkTruck | character | ready | 0.7 | 5.0 | blender BLENDER_EEVEE_NEXT | 361 → 80 KB (-77.9%) |
-| Avocado | character | ready | 1.2 | 5.0 | blender BLENDER_EEVEE_NEXT | 7920 → 120 KB (-98.5%) |
-| BoomBox | character | ready | 1.5 | 4.9 | blender BLENDER_EEVEE_NEXT | 10365 → 395 KB (-96.2%) |
-| WaterBottle | character | ready | 1.4 | 4.6 | blender BLENDER_EEVEE_NEXT | 8757 → 182 KB (-97.9%) |
-| Lantern | character | ready | 1.6 | 4.5 | blender BLENDER_EEVEE_NEXT | 9340 → 739 KB (-92.1%) |
-| ToyCar | character | ready | 1.1 | 7.8 | blender BLENDER_EEVEE_NEXT | 5295 → 840 KB (-84.1%) |
-| Corset | character | ready | 1.5 | 4.6 | blender BLENDER_EEVEE_NEXT | 13175 → 662 KB (-95.0%) |
-| BarramundiFish | character | ready | 0.6 | 3.7 | blender BLENDER_EEVEE_NEXT | 315 → 17 KB (-94.5%) |
-| own_mannequin | character | ready | 1.0 | 4.4 | blender BLENDER_EEVEE_NEXT | 3749 → 180 KB (-95.2%) |
-| own_crate | character | ready | 1.7 | 4.9 | blender BLENDER_EEVEE_NEXT | 16876 → 242 KB (-98.6%) |
-| Fox motion | clip | ready | 0.6 | 3.7 | blender BLENDER_EEVEE_NEXT | 63 → 63 KB (-0.0%) |
-| Avocado scene | splat | ready | - | 2.5 | chromium | - |
-| Walk (video + motion) | pair | ready | 0.7 | 4.3 | blender BLENDER_EEVEE_NEXT | 428 → 129 KB (-69.8%) |
+| Fox | character | ready | 4.3 | 5.3 | blender BLENDER_EEVEE_NEXT | 159 → 108 KB (-31.9%) |
+| RiggedFigure | character | ready | 3.9 | 5.5 | blender BLENDER_EEVEE_NEXT | 49 → 26 KB (-47.1%) |
+| CesiumMan | character | ready | 1.3 | 5.0 | blender BLENDER_EEVEE_NEXT | 544 → 138 KB (-74.7%) |
+| CesiumMilkTruck | character | ready | 1.3 | 5.0 | blender BLENDER_EEVEE_NEXT | 361 → 80 KB (-77.9%) |
+| Avocado | character | ready | 2.2 | 5.1 | blender BLENDER_EEVEE_NEXT | 7920 → 120 KB (-98.5%) |
+| BoomBox | character | ready | 3.0 | 4.9 | blender BLENDER_EEVEE_NEXT | 10365 → 395 KB (-96.2%) |
+| WaterBottle | character | ready | 2.1 | 4.9 | blender BLENDER_EEVEE_NEXT | 8757 → 182 KB (-97.9%) |
+| Lantern | character | ready | 1.9 | 5.0 | blender BLENDER_EEVEE_NEXT | 9340 → 739 KB (-92.1%) |
+| ToyCar | character | ready | 1.6 | 5.3 | blender BLENDER_EEVEE_NEXT | 5295 → 840 KB (-84.1%) |
+| Corset | character | ready | 3.5 | 4.6 | blender BLENDER_EEVEE_NEXT | 13175 → 662 KB (-95.0%) |
+| BarramundiFish | character | ready | 0.7 | 4.2 | blender BLENDER_EEVEE_NEXT | 315 → 17 KB (-94.5%) |
+| own_mannequin | character | ready | 1.4 | 4.4 | blender BLENDER_EEVEE_NEXT | 3749 → 180 KB (-95.2%) |
+| own_crate | character | ready | 2.3 | 4.8 | blender BLENDER_EEVEE_NEXT | 16876 → 242 KB (-98.6%) |
+| Fox motion | clip | ready | 0.7 | 4.1 | blender BLENDER_EEVEE_NEXT | 63 → 63 KB (-0.0%) |
+| Avocado scene | splat | ready | - | 3.4 | chromium | - |
+| Walk (video + motion) | pair | ready | 1.0 | 4.6 | blender BLENDER_EEVEE_NEXT | 428 → 129 KB (-69.8%) |
 
-Mean convert job 1.0 s; mean turntable job 4.7 s (24 frames at 512×512).
+Mean convert job 2.1 s; mean turntable job 4.8 s (24 frames at 512×512).
 
-Hardware: Apple M4, 10 cores, darwin arm64. Storage: local MinIO. Blender renders with EEVEE on the GPU; splat scenes render in headless Chromium.
+Hardware: Apple M4, 10 cores, darwin arm64. Storage: Amazon S3, bucket "splatbox" in us-east-1. Blender renders with EEVEE on the GPU; splat scenes render in headless Chromium.
 <!-- pipeline:end -->
 
 ## Architecture
