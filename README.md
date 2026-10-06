@@ -9,6 +9,9 @@ video with the motion generated from it, and get:
   Blender running under TypeScript workers;
 - a **turntable thumbnail** rendered in an asynchronous job and stored in S3 for the browse grid.
 
+**Live demo:** [splatbox.khademi.tech](https://splatbox.khademi.tech) — browse and open any asset;
+the bundled demo set is at [`#/demo`](https://splatbox.khademi.tech/#/demo). Uploading needs the owner's token.
+
 ![Source video and generated motion playing side by side](docs/images/viewer-pair.gif)
 
 Stack: React 18, TypeScript, Vite, three.js, @react-three/fiber, @mkkellogg/gaussian-splats-3d ·
@@ -288,7 +291,6 @@ number; that trade has not been made.
 
 ## Not built yet
 
-- A hosted demo.
 - Importing a Rigforge output directly from its asset URL.
 - An export menu (FBX and USDZ through Blender, share links).
 - An original-versus-converted comparison view.
